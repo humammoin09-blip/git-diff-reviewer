@@ -66,7 +66,7 @@ Fast and deeply capable code reviews via Google's Gemini models.
 ```env
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=AIzasyxxxxxxxxxxxxxxxxxxxx
-LLM_MODEL=gemini-2.0-flash  # (Optional: gemini-2.0-flash, gemini-1.5-pro)
+LLM_MODEL=gemini-3.6-flash  
 ```
 
 ### 3. Groq (`LLM_PROVIDER=groq`)
