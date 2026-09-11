@@ -56,7 +56,7 @@ Access Claude 3.5 Sonnet, GPT-4o, Gemini 2.0, Llama 3.3, and hundreds of other m
 
 ```env
 LLM_PROVIDER=openrouter
-OPENROU_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
 LLM_MODEL=anthropic/claude-3.5-sonnet  # (Optional, default is anthropic/claude-3.5-sonnet)
 ```
 
