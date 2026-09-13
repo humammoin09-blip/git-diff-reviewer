@@ -160,10 +160,41 @@ python main.py -s --instructions "Focus heavily on thread safety and resource lo
 
 ### Check Status
 
-Check current git status and configured provider:
+Check current git status, active ignore rules, and configured provider:
 
 ```bash
 python main.py --status
+```
+
+---
+
+## 🚫 Custom Ignore Configuration (`.reviewerignore`)
+
+You can exclude noisy or generated files (such as lockfiles, build outputs, and minified bundles) from being sent to the LLM.
+
+- **Automatic Root Detection**: Place a `.reviewerignore` file at the root of your repository.
+- **Smart Fallback**: If `.reviewerignore` is not present, `git-diff-reviewer` automatically applies smart defaults (e.g. `package-lock.json`, `*.lock`, `dist/`, `build/`, `.env`, `node_modules/`, minified assets).
+
+### Example `.reviewerignore`:
+```text
+# Package manager lockfiles
+package-lock.json
+*.lock
+
+# Build outputs & dependencies
+node_modules/
+dist/
+build/
+.venv/
+
+# Environment files
+.env
+.env.*
+
+# Minified assets & maps
+*.min.js
+*.min.css
+*.map
 ```
 
 ---
@@ -173,12 +204,15 @@ python main.py --status
 ```text
 git-diff-reviewer/
 ├── .env.example       # Template for environment configuration
-├── .gitignore          # Git ignore rules
-├── requirements.txt    # Python package dependencies
-├── llm.py              # Modular LLM client & provider implementations
-├── reviewer.py         # Git diff extraction & prompt construction
-├── main.py             # CLI application entrypoint
-└── README.md           # Documentation & user guide
+├── .reviewerignore    # Custom file/folder ignore pattern configuration
+├── .gitignore         # Git ignore rules
+├── requirements.txt   # Python package dependencies
+├── llm.py             # Modular LLM client & provider implementations
+├── reviewer.py        # Git diff extraction & prompt construction
+├── ignore.py          # Pattern matching & diff filtering engine
+├── main.py            # CLI application entrypoint
+├── tests/             # Comprehensive unit test suite
+└── README.md          # Documentation & user guide
 ```
 
 ---

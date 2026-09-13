@@ -4,7 +4,15 @@ reviewer.py - Git Diff Extraction and Code Review Prompt Construction
 
 import os
 import subprocess
-from typing import Tuple, Optional, Dict, Any
+from typing import Tuple, Optional, Dict, Any, List
+
+from ignore import (
+    load_ignore_patterns,
+    filter_diff,
+    is_ignored,
+    DEFAULT_IGNORE_PATTERNS,
+    REVIEWER_IGNORE_FILENAME,
+)
 
 
 class GitError(Exception):
@@ -97,7 +105,9 @@ def get_git_status_summary(cwd: Optional[str] = None) -> Dict[str, Any]:
 def get_git_diff(
     diff_type: str = "auto",
     target_ref: Optional[str] = None,
-    cwd: Optional[str] = None
+    cwd: Optional[str] = None,
+    filter_ignored: bool = True,
+    ignore_patterns: Optional[list] = None,
 ) -> Tuple[str, str, str]:
     """
     Fetch git diff and diff statistics.
@@ -105,10 +115,16 @@ def get_git_diff(
     :param diff_type: 'staged', 'unstaged', 'branch', 'ref', or 'auto'.
     :param target_ref: Specific branch/commit reference to diff against.
     :param cwd: Optional working directory.
+    :param filter_ignored: Whether to filter out files matching .reviewerignore / defaults.
+    :param ignore_patterns: Optional custom ignore patterns list.
     :return: Tuple of (diff_content, diff_stat, detected_type)
     """
     if not is_git_repository(cwd):
         raise GitError("The current directory is not a Git repository.")
+
+    diff_content = ""
+    diff_stat = ""
+    detected_type = "No Changes Detected"
 
     if target_ref or diff_type in ["branch", "ref"]:
         ref = target_ref or "main"
@@ -116,39 +132,47 @@ def get_git_diff(
         stat_cmd = ["git", "diff", "--stat", ref]
         diff_content = run_git_command(diff_cmd, cwd=cwd)
         diff_stat = run_git_command(stat_cmd, cwd=cwd)
-        return diff_content, diff_stat, f"Ref/Branch ({ref})"
-
-    if diff_type == "staged":
+        detected_type = f"Ref/Branch ({ref})"
+    elif diff_type == "staged":
         diff_content = run_git_command(["git", "diff", "--cached"], cwd=cwd)
         diff_stat = run_git_command(["git", "diff", "--cached", "--stat"], cwd=cwd)
-        return diff_content, diff_stat, "Staged Changes (--cached)"
-
-    if diff_type == "unstaged":
+        detected_type = "Staged Changes (--cached)"
+    elif diff_type == "unstaged":
         diff_content = run_git_command(["git", "diff"], cwd=cwd)
         diff_stat = run_git_command(["git", "diff", "--stat"], cwd=cwd)
-        return diff_content, diff_stat, "Unstaged Changes"
+        detected_type = "Unstaged Changes"
+    else:
+        # 'auto' mode: check staged first, then unstaged, then last commit
+        staged_diff = run_git_command(["git", "diff", "--cached"], cwd=cwd)
+        if staged_diff:
+            diff_stat = run_git_command(["git", "diff", "--cached", "--stat"], cwd=cwd)
+            diff_content = staged_diff
+            detected_type = "Staged Changes (--cached)"
+        else:
+            unstaged_diff = run_git_command(["git", "diff"], cwd=cwd)
+            if unstaged_diff:
+                diff_stat = run_git_command(["git", "diff", "--stat"], cwd=cwd)
+                diff_content = unstaged_diff
+                detected_type = "Unstaged Changes"
+            else:
+                try:
+                    head_diff = run_git_command(["git", "diff", "HEAD~1"], cwd=cwd)
+                    if head_diff:
+                        diff_stat = run_git_command(["git", "diff", "--stat", "HEAD~1"], cwd=cwd)
+                        diff_content = head_diff
+                        detected_type = "Latest Commit (HEAD~1)"
+                except Exception:
+                    pass
 
-    # 'auto' mode: check staged first, then unstaged, then last commit
-    staged_diff = run_git_command(["git", "diff", "--cached"], cwd=cwd)
-    if staged_diff:
-        diff_stat = run_git_command(["git", "diff", "--cached", "--stat"], cwd=cwd)
-        return staged_diff, diff_stat, "Staged Changes (--cached)"
+    if filter_ignored and diff_content:
+        diff_content, diff_stat, _ = filter_diff(
+            diff_content=diff_content,
+            diff_stat=diff_stat,
+            patterns=ignore_patterns,
+            cwd=cwd,
+        )
 
-    unstaged_diff = run_git_command(["git", "diff"], cwd=cwd)
-    if unstaged_diff:
-        diff_stat = run_git_command(["git", "diff", "--stat"], cwd=cwd)
-        return unstaged_diff, diff_stat, "Unstaged Changes"
-
-    # If neither staged nor unstaged, try comparing against HEAD~1 (the latest commit)
-    try:
-        head_diff = run_git_command(["git", "diff", "HEAD~1"], cwd=cwd)
-        if head_diff:
-            diff_stat = run_git_command(["git", "diff", "--stat", "HEAD~1"], cwd=cwd)
-            return head_diff, diff_stat, "Latest Commit (HEAD~1)"
-    except Exception:
-        pass
-
-    return "", "", "No Changes Detected"
+    return diff_content, diff_stat, detected_type
 
 
 def truncate_diff(diff_text: str, max_chars: Optional[int] = None) -> str:

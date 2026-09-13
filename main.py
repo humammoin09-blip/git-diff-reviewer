@@ -18,6 +18,7 @@ from reviewer import (
     get_git_diff,
     truncate_diff,
     build_review_prompt,
+    load_ignore_patterns,
     GitError,
 )
 
@@ -84,10 +85,14 @@ def render_markdown(md_text: str, raw: bool = False):
 
 
 def show_status(provider_override: Optional[str] = None, model_override: Optional[str] = None):
-    """Display current git repository status and LLM configuration."""
+    """Display current git repository status, ignore rules, and LLM configuration."""
     status = get_git_status_summary()
     active_provider = (provider_override or os.getenv("LLM_PROVIDER", "openrouter")).lower()
     active_model = model_override or os.getenv("LLM_MODEL", "(provider default)")
+    
+    ignore_file_exists = os.path.isfile(".reviewerignore")
+    patterns = load_ignore_patterns()
+    ignore_desc = f".reviewerignore ({len(patterns)} rules)" if ignore_file_exists else f"Smart Defaults ({len(patterns)} rules)"
 
     if RICH_AVAILABLE:
         table = Table(title="Git Diff Reviewer - Status Summary", border_style="cyan")
@@ -101,6 +106,7 @@ def show_status(provider_override: Optional[str] = None, model_override: Optiona
             table.add_row("Unstaged Changes", f"{status.get('unstaged_count', 0)} files")
             table.add_row("Untracked Files", f"{status.get('untracked_count', 0)} files")
         
+        table.add_row("Ignore Rules", f"[bold green]{ignore_desc}[/bold green]")
         table.add_row("Configured Provider", f"[bold yellow]{active_provider}[/bold yellow]")
         table.add_row("Configured Model", active_model)
         console.print(table)
@@ -112,6 +118,7 @@ def show_status(provider_override: Optional[str] = None, model_override: Optiona
             print(f"Staged Changes: {status.get('staged_count', 0)} files")
             print(f"Unstaged Changes: {status.get('unstaged_count', 0)} files")
             print(f"Untracked Files: {status.get('untracked_count', 0)} files")
+        print(f"Ignore Rules: {ignore_desc}")
         print(f"Configured Provider: {active_provider}")
         print(f"Configured Model: {active_model}")
         print("================================")

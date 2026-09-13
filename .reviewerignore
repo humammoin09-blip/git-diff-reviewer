@@ -1,0 +1,64 @@
+# ==========================================
+# .reviewerignore
+# Patterns of files/directories to exclude from AI code reviews
+# Syntax mirrors .gitignore
+# ==========================================
+
+# Package manager lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+composer.lock
+Cargo.lock
+poetry.lock
+Pipfile.lock
+Gemfile.lock
+mix.lock
+flake.lock
+*.lock
+
+# Dependencies & Environments
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Build outputs & Distributions
+dist/
+build/
+target/
+out/
+vendor/
+bundle/
+
+# Environment files & Secrets
+.env
+.env.*
+*.env
+
+# Minified assets & Source maps
+*.min.js
+*.min.css
+*.map
+*.bundle.js
+
+# Binary & Media files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.pdf
+*.zip
+*.tar.gz
+*.tgz
+*.exe
+*.dll
+*.so
+*.dylib
