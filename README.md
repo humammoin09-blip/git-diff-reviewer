@@ -160,10 +160,55 @@ python main.py -s --instructions "Focus heavily on thread safety and resource lo
 
 ### Check Status
 
-Check current git status, active ignore rules, and configured provider:
+Check current git status, active ignore rules, pre-commit hook status, and configured provider:
 
 ```bash
 python main.py --status
+```
+
+---
+
+## 🪝 Pre-commit Git Hook Automation
+
+Automatically trigger AI code reviews whenever a developer runs `git commit`.
+
+### 1. Install the Pre-commit Hook
+
+Run either of the following commands from your repository root:
+
+```bash
+# Via main CLI
+python main.py --install-hook
+
+# Or via dedicated installer script
+python hooks/install_hook.py
+```
+
+This installs the hook script into your local `.git/hooks/pre-commit` file and sets appropriate execution permissions. If an existing foreign hook is present, a backup (`pre-commit.backup`) is created automatically.
+
+### 2. How it Works on `git commit`
+
+When you stage changes and run `git commit`:
+1. The hook executes `python main.py --staged`.
+2. Staged changes are retrieved and filtered against `.reviewerignore` patterns.
+3. The clean diff is sent to your configured LLM provider.
+4. The structured code review is printed directly in your terminal.
+
+```bash
+git add src/app.py
+git commit -m "feat: update authentication logic"
+# => [git-diff-reviewer] Running pre-commit AI code review...
+# => AI Code Review Output is displayed in your terminal before commit finishes!
+```
+
+### 3. Uninstall the Hook
+
+To remove the hook (and restore any previous backup):
+
+```bash
+python main.py --uninstall-hook
+# or
+python hooks/install_hook.py --uninstall
 ```
 
 ---
@@ -210,8 +255,16 @@ git-diff-reviewer/
 ├── llm.py             # Modular LLM client & provider implementations
 ├── reviewer.py        # Git diff extraction & prompt construction
 ├── ignore.py          # Pattern matching & diff filtering engine
+├── hooks/             # Pre-commit hook automation package & installer
+│   ├── __init__.py
+│   ├── manager.py
+│   └── install_hook.py
 ├── main.py            # CLI application entrypoint
-├── tests/             # Comprehensive unit test suite
+├── tests/             # Comprehensive unit test suite (21 tests)
+│   ├── test_llm.py
+│   ├── test_reviewer.py
+│   ├── test_ignore.py
+│   └── test_hooks.py
 └── README.md          # Documentation & user guide
 ```
 
@@ -224,9 +277,7 @@ Run the included test suite to verify git diff parsing and LLM provider implemen
 ```bash
 python -m unittest discover tests
 ```
-
 ---
-
 ## 📄 License
 
 MIT License. Feel free to modify and adapt for your team's workflow!
