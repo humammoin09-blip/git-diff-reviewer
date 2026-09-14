@@ -267,9 +267,7 @@ git-diff-reviewer/
 │   └── test_hooks.py
 └── README.md          # Documentation & user guide
 ```
-
 ---
-
 ## 🧪 Testing
 
 Run the included test suite to verify git diff parsing and LLM provider implementations:
