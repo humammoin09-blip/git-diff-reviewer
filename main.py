@@ -21,6 +21,19 @@ from reviewer import (
     load_ignore_patterns,
     GitError,
 )
+from hooks import (
+    install_pre_commit_hook,
+    uninstall_pre_commit_hook,
+    is_hook_installed,
+)
+
+# Ensure UTF-8 output encoding across all operating systems
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # Optional rich formatting support with fallback
 try:
@@ -30,7 +43,7 @@ try:
     from rich.table import Table
     from rich.status import Status
     RICH_AVAILABLE = True
-    console = Console()
+    console = Console(highlight=False)
 except ImportError:
     RICH_AVAILABLE = False
     console = None
@@ -38,32 +51,44 @@ except ImportError:
 
 def print_info(text: str):
     """Print informative message."""
-    if RICH_AVAILABLE:
-        console.print(f"[bold cyan]ℹ[/bold cyan] {text}")
+    if RICH_AVAILABLE and console:
+        try:
+            console.print(f"[bold cyan][INFO][/bold cyan] {text}")
+        except Exception:
+            print(f"[INFO] {text}")
     else:
         print(f"[INFO] {text}")
 
 
 def print_success(text: str):
     """Print success message."""
-    if RICH_AVAILABLE:
-        console.print(f"[bold green]✔[/bold green] {text}")
+    if RICH_AVAILABLE and console:
+        try:
+            console.print(f"[bold green][SUCCESS][/bold green] {text}")
+        except Exception:
+            print(f"[SUCCESS] {text}")
     else:
         print(f"[SUCCESS] {text}")
 
 
 def print_warning(text: str):
     """Print warning message."""
-    if RICH_AVAILABLE:
-        console.print(f"[bold yellow]⚠[/bold yellow] {text}")
+    if RICH_AVAILABLE and console:
+        try:
+            console.print(f"[bold yellow][WARNING][/bold yellow] {text}")
+        except Exception:
+            print(f"[WARNING] {text}")
     else:
         print(f"[WARNING] {text}")
 
 
 def print_error(text: str):
     """Print error message."""
-    if RICH_AVAILABLE:
-        console.print(f"[bold red]✖[/bold red] {text}")
+    if RICH_AVAILABLE and console:
+        try:
+            console.print(f"[bold red][ERROR][/bold red] {text}")
+        except Exception:
+            print(f"[ERROR] {text}")
     else:
         print(f"[ERROR] {text}")
 
@@ -94,6 +119,9 @@ def show_status(provider_override: Optional[str] = None, model_override: Optiona
     patterns = load_ignore_patterns()
     ignore_desc = f".reviewerignore ({len(patterns)} rules)" if ignore_file_exists else f"Smart Defaults ({len(patterns)} rules)"
 
+    hook_active = is_hook_installed()
+    hook_desc = "Installed (.git/hooks/pre-commit)" if hook_active else "Not Installed"
+
     if RICH_AVAILABLE:
         table = Table(title="Git Diff Reviewer - Status Summary", border_style="cyan")
         table.add_column("Property", style="bold white")
@@ -106,6 +134,7 @@ def show_status(provider_override: Optional[str] = None, model_override: Optiona
             table.add_row("Unstaged Changes", f"{status.get('unstaged_count', 0)} files")
             table.add_row("Untracked Files", f"{status.get('untracked_count', 0)} files")
         
+        table.add_row("Pre-commit Hook", f"[bold green]{hook_desc}[/bold green]" if hook_active else f"[yellow]{hook_desc}[/yellow]")
         table.add_row("Ignore Rules", f"[bold green]{ignore_desc}[/bold green]")
         table.add_row("Configured Provider", f"[bold yellow]{active_provider}[/bold yellow]")
         table.add_row("Configured Model", active_model)
@@ -118,6 +147,7 @@ def show_status(provider_override: Optional[str] = None, model_override: Optiona
             print(f"Staged Changes: {status.get('staged_count', 0)} files")
             print(f"Unstaged Changes: {status.get('unstaged_count', 0)} files")
             print(f"Untracked Files: {status.get('untracked_count', 0)} files")
+        print(f"Pre-commit Hook: {hook_desc}")
         print(f"Ignore Rules: {ignore_desc}")
         print(f"Configured Provider: {active_provider}")
         print(f"Configured Model: {active_model}")
@@ -221,7 +251,7 @@ def main():
         help="Output raw markdown text without rich terminal formatting"
     )
 
-    # Utility flags
+    # Utility & Hook flags
     parser.add_argument(
         "-i", "--interactive",
         action="store_true",
@@ -230,10 +260,44 @@ def main():
     parser.add_argument(
         "--status",
         action="store_true",
-        help="Display repository status and provider configuration, then exit"
+        help="Display repository status, active ignore rules, hook status, and provider configuration, then exit"
+    )
+    parser.add_argument(
+        "--install-hook",
+        action="store_true",
+        help="Install git-diff-reviewer as an automated pre-commit hook in .git/hooks/pre-commit"
+    )
+    parser.add_argument(
+        "--uninstall-hook",
+        action="store_true",
+        help="Uninstall git-diff-reviewer pre-commit hook"
+    )
+    parser.add_argument(
+        "--force", "-f",
+        action="store_true",
+        help="Force overwrite existing hooks when installing"
     )
 
     args = parser.parse_args()
+
+    # Handle hook installation / uninstallation
+    if args.install_hook:
+        success, msg = install_pre_commit_hook(force=args.force)
+        if success:
+            print_success(msg)
+            sys.exit(0)
+        else:
+            print_error(msg)
+            sys.exit(1)
+
+    if args.uninstall_hook:
+        success, msg = uninstall_pre_commit_hook()
+        if success:
+            print_success(msg)
+            sys.exit(0)
+        else:
+            print_error(msg)
+            sys.exit(1)
 
     # Handle status flag
     if args.status:
