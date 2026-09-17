@@ -16,7 +16,7 @@ A modular, terminal-based CLI tool that inspects local git diffs and sends them 
 
 ---
 
-## Quick Start
+##Quick Start
 
 ### 1. Clone & Setup
 
