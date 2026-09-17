@@ -1,4 +1,4 @@
-# Git Diff Reviewer 🔍🤖
+# Git Diff Reviewer 
 
 A modular, terminal-based CLI tool that inspects local git diffs and sends them to your choice of LLM provider for an automated, high-rigor security and code quality review.
 
@@ -16,9 +16,9 @@ A modular, terminal-based CLI tool that inspects local git diffs and sends them 
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
-### 1. Clone & Setup Virtual Environment
+### 1. Clone & Setup
 
 ```bash
 cd git-diff-reviewer
@@ -29,8 +29,11 @@ python -m venv .venv
 # Activate on Linux/macOS
 # source .venv/bin/activate
 
-# Install dependencies
+# Option A: Install dependencies directly
 pip install -r requirements.txt
+
+# Option B: Install as a global/editable CLI tool ('git-review' / 'git-diff-reviewer')
+pip install -e .
 ```
 
 ### 2. Configure `.env`
@@ -213,7 +216,7 @@ python hooks/install_hook.py --uninstall
 
 ---
 
-## 🚫 Custom Ignore Configuration (`.reviewerignore`)
+## Custom Ignore Configuration (`.reviewerignore`)
 
 You can exclude noisy or generated files (such as lockfiles, build outputs, and minified bundles) from being sent to the LLM.
 
@@ -248,24 +251,26 @@ build/
 
 ```text
 git-diff-reviewer/
-├── .env.example       # Template for environment configuration
-├── .reviewerignore    # Custom file/folder ignore pattern configuration
-├── .gitignore         # Git ignore rules
-├── requirements.txt   # Python package dependencies
-├── llm.py             # Modular LLM client & provider implementations
-├── reviewer.py        # Git diff extraction & prompt construction
-├── ignore.py          # Pattern matching & diff filtering engine
-├── hooks/             # Pre-commit hook automation package & installer
+├── pyproject.toml      # Modern PEP 518/621 build configuration
+├── setup.py            # Legacy/compatibility setuptools script
+├── .env.example        # Template for environment configuration
+├── .reviewerignore     # Custom file/folder ignore pattern configuration
+├── .gitignore          # Git ignore rules
+├── requirements.txt    # Python package dependencies
+├── llm.py              # Modular LLM client & provider implementations
+├── reviewer.py         # Git diff extraction & prompt construction
+├── ignore.py           # Pattern matching & diff filtering engine
+├── hooks/              # Pre-commit hook automation package & installer
 │   ├── __init__.py
 │   ├── manager.py
 │   └── install_hook.py
-├── main.py            # CLI application entrypoint
-├── tests/             # Comprehensive unit test suite (21 tests)
+├── main.py             # CLI application entrypoint
+├── tests/              # Comprehensive unit test suite (22 tests)
 │   ├── test_llm.py
 │   ├── test_reviewer.py
 │   ├── test_ignore.py
 │   └── test_hooks.py
-└── README.md          # Documentation & user guide
+└── README.md           # Documentation & user guide
 ```
 ---
 ## 🧪 Testing
