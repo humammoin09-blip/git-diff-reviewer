@@ -286,3 +286,6 @@ python -m unittest discover tests
 MIT License. Feel free to modify and adapt for your team's workflow!
 
 You should try it once
+
+I already use it in every project and before pushing any changes AI checks and gives us response like Approved and reason or danger and reason e.tc
+
