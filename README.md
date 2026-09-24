@@ -284,3 +284,5 @@ python -m unittest discover tests
 ## 📄 License
 
 MIT License. Feel free to modify and adapt for your team's workflow!
+
+You should try it once
